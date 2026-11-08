@@ -78,6 +78,8 @@
     }
   },
   "devDependencies": {
+    "@babel/cli": "^8.1.0",
+    "@babel/preset-react": "^8.0.1",
     "@react-three/fiber": "9.5.0",
     "@remotion/bundler": "4.0.484",
     "@remotion/motion-blur": "4.0.484",
