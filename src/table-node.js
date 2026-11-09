@@ -31,7 +31,9 @@ function parseCanvasTable(node) {
     if (!row || row.length !== header.length) return null
     rows.push(row)
   }
-  return { heading, rows, storyboard: heading.trim() === '【分镜表】' }
+  const headingToken = String(heading).replace(/[*_~\u0060#>【】\[\]《》「」()（）:：]/g, '')
+  const bareStoryboard = heading.trim() === '' && header.length === 6 && /镜头|镜号|shot|帧|frame|时长|duration/i.test(header.join(' '))
+  return { heading, rows, storyboard: /分镜|storyboard/i.test(headingToken) || bareStoryboard }
 }
 
 function isTableNode(node) { return !!parseCanvasTable(node) }

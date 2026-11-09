@@ -17,6 +17,7 @@ import {
   scaffoldOps,
   parseNarration,
   parseStyle,
+  specMarkerOf,
 } from '../src/motion/canvas-spec.js'
 
 let passed = 0
@@ -182,6 +183,30 @@ console.log('9) 表格单元格转义兼容视频工程')
   assert.equal(scaffoldOps({ nodes: [] }, { storyboard: oldLabel }).ops[0].data, undefined)
   assert.equal(storyboardTable(oldLabel).split('\n').filter(line => line.startsWith('| 镜头')).length, 1)
   ok('新表转义往返、历史原样解析、scaffold 标记及完整表格输入')
+}
+
+console.log('10) 分镜表节点识别放宽：标题别名 / data 标记 / 无标题裸表')
+{
+  const bare = '| 镜头 | 帧区间 | 镜头卡 | 这一镜要做什么 | 屏幕上出现什么 | 文案 / 声音 |\n'
+    + '| --- | --- | --- | --- | --- | --- |\n'
+    + '| shot-1 | 0–29f | — | 开场 | 黑底标题 | — |'
+  const cases = [
+    [{ id: 'a', label: bare }, true, '无标题裸表'],
+    [{ id: 'b', label: '## 分镜表\n' + bare }, true, '## 标题'],
+    [{ id: 'c', label: '**【分镜表】**\n' + bare }, true, '粗体括号'],
+    [{ id: 'd', label: '分镜表（Storyboard）\n' + bare }, true, '中英混写'],
+    [{ id: 'e', label: '任意表', data: { type: 'storyboard' } }, true, 'data 标记（任意 shape）'],
+    [{ id: 'f', label: '普通文本' }, false, '普通文本不误判'],
+    [{ id: 'g', label: '风格 A 与 B 的对比' }, false, '含风格字样的普通文本不误判'],
+  ]
+  for (const [node, expected, name] of cases) assert.equal(specMarkerOf(node) === 'storyboard', expected, name)
+  const read = readCanvasSpec({ nodes: [cases[0][0]] }, { fps: 30 })
+  assert.deepEqual(read.problems, [])
+  assert.equal(read.storyboard.length, 1)
+  assert.equal(read.nodes.storyboard, 'a')
+  // 真实事故形态：画布上的表只有表、没有标题行，create 必须读得到。
+  assert.equal(validateCanvasSpec({ nodes: [cases[0][0]] }, { spec: { fps: 30, totalFrames: 30 } }).errors.length, 0)
+  ok('7 种形态识别', '裸表/别名/data 命中，普通文本不误判')
 }
 
 console.log('\n全部通过：' + passed + ' 组')
